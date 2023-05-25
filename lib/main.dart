@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,27 +12,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a blue toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'Sleep Tracker',
+      theme: ThemeData.dark(),
+      themeMode: ThemeMode.dark,
+      home: const MyHomePage(title: 'Sleep Tracker'),
     );
   }
 }
@@ -54,8 +38,12 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+// https://github.com/aleksanderwozniak/table_calendar/blob/master/example/lib/pages/basics_example.dart
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  CalendarFormat calendarFormat = CalendarFormat.month;
+  DateTime? selectedDay; 
+  DateTime focusedDay = DateTime.now();
 
   void _incrementCounter() {
     setState(() {
@@ -70,6 +58,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    DateTime firstDay = DateTime(DateTime.now().year, 1, 1);
+    DateTime lastDay = DateTime(DateTime.now().year, DateTime.now().month + 7, 0);
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -81,10 +71,11 @@ class _MyHomePageState extends State<MyHomePage> {
         // TRY THIS: Try changing the color here to a specific color (to
         // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
         // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text(widget.title,
+        style: TextStyle(color: Theme.of(context).colorScheme.inversePrimary)),
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
@@ -105,9 +96,42 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
+            TableCalendar (
+              firstDay: firstDay,
+              lastDay: lastDay,
+              currentDay: DateTime.now(),
+              focusedDay: focusedDay,
+              calendarFormat: calendarFormat,
+              weekendDays: const [],
+              selectedDayPredicate: (day) {
+              // Use `selectedDayPredicate` to determine which day is currently selected.
+              // If this returns true, then `day` will be marked as selected.
+
+              // Using `isSameDay` is recommended to disregard
+              // the time-part of compared DateTime objects.
+              return isSameDay(selectedDay, day);
+            },
+            onDaySelected: (newSelectedDay, newFocusedDay) {
+              if (!isSameDay(selectedDay, newSelectedDay)) {
+                // Call `setState()` when updating the selected day
+                setState(() {
+                  selectedDay = newSelectedDay;
+                  focusedDay = newFocusedDay;
+                });
+              }
+            },
+            onFormatChanged: (format) {
+              if (calendarFormat != format) {
+                // Call `setState()` when updating calendar format
+                setState(() {
+                  calendarFormat = format;
+                });
+              }
+            },
+            onPageChanged: (newFocusedDay) {
+              // No need to call `setState()` here
+              focusedDay = newFocusedDay;
+            },),
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
