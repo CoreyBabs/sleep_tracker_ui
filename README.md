@@ -1,16 +1,13 @@
 # sleep_tracker_ui
 
-A new Flutter project.
+A project to learn flutter and act as the frontend to https://github.com/CoreyBabs/sleep-tracker.
 
-## Getting Started
+## TODO
 
-This project is a starting point for a Flutter application.
+* Add sleep modal
+* edit sleep modal
+* manage tags modal
+* get data from gql api
+* stats page
 
-A few resources to get you started if this is your first Flutter project:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
