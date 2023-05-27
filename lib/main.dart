@@ -16,10 +16,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sleep Tracker',
+      title: 'Sleep Journal',
       theme: ThemeData.dark(),
       themeMode: ThemeMode.dark,
-      home: const MyHomePage(title: 'Sleep Tracker'),
+      home: const MyHomePage(title: 'Sleep Journal'),
     );
   }
 }
@@ -188,10 +188,22 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: hasSleep ? 'Edit Sleep' : 'Add Sleep',
-        child: Icon(hasSleep ? Icons.edit : Icons.add),
+      floatingActionButton: 
+      Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            onPressed: _incrementCounter,
+            tooltip: 'Manage Tags',
+            child: const Icon(Icons.label),
+          ),
+          const Padding(padding: EdgeInsets.symmetric(horizontal: 6)),
+          FloatingActionButton(
+            onPressed: _incrementCounter,
+            tooltip: hasSleep ? 'Edit Sleep' : 'Add Sleep',
+            child: Icon(hasSleep ? Icons.edit : Icons.add),
+          ),
+        ],
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
