@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:sleep_tracker_ui/Classes/sleep.dart';
+import 'package:sleep_tracker_ui/Classes/sleep_comment.dart';
+import 'package:sleep_tracker_ui/Classes/tag.dart';
+import 'package:sleep_tracker_ui/mock_data.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 void main() {
@@ -23,15 +27,6 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -40,10 +35,13 @@ class MyHomePage extends StatefulWidget {
 
 // https://github.com/aleksanderwozniak/table_calendar/blob/master/example/lib/pages/basics_example.dart
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
   CalendarFormat calendarFormat = CalendarFormat.month;
   DateTime? selectedDay; 
   DateTime focusedDay = DateTime.now();
+  bool hasSleep = false;
+  List<Tag> tags = constructMockTags();
+  List<SleepComment> comments = constructMockComments();
+  Sleep sleep = constructMockSleep()[0];
 
   void _incrementCounter() {
     setState(() {
@@ -52,7 +50,7 @@ class _MyHomePageState extends State<MyHomePage> {
       // so that the display can reflect the updated values. If we changed
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
-      _counter++;
+     // _counter++;
     });
   }
 
@@ -77,10 +75,10 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title,
         style: TextStyle(color: Theme.of(context).colorScheme.inversePrimary)),
       ),
-      body: Center(
+      body: 
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: Column(
+        Column(
           // Column is also a layout widget. It takes a list of children and
           // arranges them vertically. By default, it sizes itself to fit its
           // children horizontally, and tries to be as tall as its parent.
@@ -94,7 +92,8 @@ class _MyHomePageState extends State<MyHomePage> {
           // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
           // action in the IDE, or press "p" in the console), to see the
           // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
+         // mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             TableCalendar (
               firstDay: firstDay,
@@ -102,6 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
               currentDay: DateTime.now(),
               focusedDay: focusedDay,
               calendarFormat: calendarFormat,
+              rowHeight: 60,
               weekendDays: const [],
               selectedDayPredicate: (day) {
               // Use `selectedDayPredicate` to determine which day is currently selected.
@@ -117,6 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 setState(() {
                   selectedDay = newSelectedDay;
                   focusedDay = newFocusedDay;
+                  hasSleep = !hasSleep;
                 });
               }
             },
@@ -131,18 +132,110 @@ class _MyHomePageState extends State<MyHomePage> {
             onPageChanged: (newFocusedDay) {
               // No need to call `setState()` here
               focusedDay = newFocusedDay;
-            },),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            },), 
+            const Padding(padding: EdgeInsets.symmetric(vertical: 10)),
+            // Row(
+            //   children: [
+            //     Text(
+            //       'Tags:',
+            //       style: Theme.of(context).textTheme.headlineSmall
+            //     ),
+            //     const Padding(
+            //       padding: EdgeInsets.symmetric(horizontal: 7)),
+            //     for (var tag in tags)
+            //       Container(
+            //         decoration: BoxDecoration(
+            //           shape: BoxShape.rectangle,
+            //           color: tag.color,
+            //           borderRadius: BorderRadius.circular(2.0),
+            //         ),
+            //         margin: const EdgeInsets.symmetric(horizontal: 3),
+            //         alignment: Alignment.center,
+            //         child: Text(tag.name),),
+            // ],)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Tags:',
+                style: Theme.of(context).textTheme.headlineSmall
+                    )),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 10)),
+            Align(
+              alignment: Alignment.centerLeft,
+              child:
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxHeight: 30
+                  ),
+                  child: ListView(
+                    shrinkWrap: true,
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 9)),
+                      for (var tag in tags)
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.rectangle,
+                            color: tag.color,
+                            borderRadius:  BorderRadius.circular(5.0)
+                          ),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          alignment: Alignment.center,
+                          child: Text(tag.name),),
+                      ],
+                  ),
+                ),
             ),
-          ],
-        ),
-      ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 9)),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Info:',
+                style: Theme.of(context).textTheme.headlineSmall
+                    )),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 9)),         
+            Flexible(
+              // constraints: const BoxConstraints(maxWidth: 50),
+              child:
+                ListView(
+                  shrinkWrap: true,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.grade),
+                      title: Align(
+                        alignment: Alignment.centerLeft,
+                        child: sleep.qualityIntToQualityIcon()),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.access_time),
+                      title: Text(
+                        sleep.amount.toString(),
+                      )
+                    ),
+                    for (var comment in comments)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Card(
+                          child: ListTile(
+                            leading: const Icon(Icons.comment),
+                            title: Text(
+                              comment.comment,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],)
+                ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        tooltip: hasSleep ? 'Edit Sleep' : 'Add Sleep',
+        child: Icon(hasSleep ? Icons.edit : Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
