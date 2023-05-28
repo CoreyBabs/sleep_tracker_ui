@@ -60,6 +60,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _saveSleep() {
     // call db save here to construct sleep
+
+    if (currentAmount <= 0 || currentQuality < 1) {
+      return;
+    }
+
     setState(() {
       currentTags = Tag.getTagsByName(allTags, selectedNames);
       sleep = Sleep(-1, currentAmount, currentQuality, DateTime.now());
@@ -71,18 +76,26 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  showAddSleepDialog(BuildContext context) {
+  showSleepDialog(BuildContext context, DialogMode mode) {
     var date = DateTime.now().toIso8601String().split('T').first;
     showDialog(context: context, 
       builder: (context) {
         int selectedQuality = -1;
         TextEditingController amountFieldController = TextEditingController();
         TextEditingController commentFieldController = TextEditingController();
-        amountFieldController.text = "0";
+        String prefix = "Add";
+
+        if (mode == DialogMode.edit) {
+          amountFieldController.text = currentAmount.toString();
+          commentFieldController.text = currentComment.toString();
+          prefix = "Edit";
+          selectedQuality = currentQuality;
+        }
+
         return StatefulBuilder(
           builder: (context, setState) { 
             return AlertDialog(
-              title: Text('Add Sleep for $date'),
+              title: Text('$prefix Sleep for $date'),
               content: Column(
               children: [
                 Row(
@@ -103,7 +116,6 @@ class _MyHomePageState extends State<MyHomePage> {
                       child:
                         TextField(
                           controller: amountFieldController,
-                    //  initialValue: "0",
                           showCursor: true,
                           autocorrect: false,
                           inputFormatters: [
@@ -137,6 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             selectedNames = selectedList;
                             });
                           },
+                          [for (var t in currentTags) t.name]
                         ),
                     )
                     ),
@@ -174,14 +187,6 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ); 
           });
-      },
-    );
-  }
-
-  showEditSleepDialog(BuildContext context) {
-    showDialog(context: context, 
-      builder: (context) {
-        return buildAlertDialog(context, "Edit Sleep", DialogMode.edit, DateTime.now().toIso8601String().split('T').first);
       },
     );
   }
@@ -348,7 +353,11 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           const Padding(padding: EdgeInsets.symmetric(horizontal: 6)),
           FloatingActionButton(
-            onPressed: () { DateTime.now().isBefore(selectedDay ?? DateTime.now()) ? null : sleep != null ? showEditSleepDialog(context) : showAddSleepDialog(context);},
+            onPressed: () { DateTime.now().isBefore(selectedDay ?? DateTime.now()) 
+              ? null 
+              : sleep != null 
+                ? showSleepDialog(context, DialogMode.edit) 
+                : showSleepDialog(context, DialogMode.add);},
             tooltip: sleep != null ? 'Edit Sleep' : 'Add Sleep',
             backgroundColor: DateTime.now().isBefore(selectedDay ?? DateTime.now()) ? Colors.grey : Theme.of(context).colorScheme.secondary,
             child: Icon(sleep != null ? Icons.edit : Icons.add),          
