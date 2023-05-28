@@ -42,19 +42,32 @@ class _MyHomePageState extends State<MyHomePage> {
   CalendarFormat calendarFormat = CalendarFormat.month;
   DateTime? selectedDay; 
   DateTime focusedDay = DateTime.now();
-  bool hasSleep = false;
-  List<Tag> tags = constructMockTags();
-  List<String> selectedTags = [];
-  List<SleepComment> comments = constructMockComments();
-  Sleep sleep = constructMockSleep()[0];
+  List<Tag> allTags = constructMockTags();
+  List<String> selectedNames = [];
+  List<SleepComment> comments = [];//constructMockComments();
+  Sleep? sleep;
 
   int currentQuality = -1;
   double currentAmount = -1.0;
   String currentComment = "";
+  List<Tag> currentTags = [];
 
   void _setCurrentQuality(int newQuality) {
     setState(() {
       currentQuality = newQuality;
+    });
+  }
+
+  void _saveSleep() {
+    // call db save here to construct sleep
+    setState(() {
+      currentTags = Tag.getTagsByName(allTags, selectedNames);
+      sleep = Sleep(-1, currentAmount, currentQuality, DateTime.now());
+      sleep?.tags = currentTags;
+      if (currentComment.isNotEmpty) {
+        sleep?.comments = [SleepComment(-1, sleep?.id ?? -1, currentComment)];
+        comments = sleep?.comments ?? [];
+      }
     });
   }
 
@@ -118,10 +131,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       constraints: const BoxConstraints(maxHeight: 200, maxWidth: 200),
                       child: SingleChildScrollView(
                         child: MultiSelectChip(
-                          [for (var t in tags) t.name],
+                          [for (var t in allTags) t.name],
                           (selectedList) {
                             setState(() {
-                            selectedTags = selectedList;
+                            selectedNames = selectedList;
                             });
                           },
                         ),
@@ -156,7 +169,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   onPressed: () { Navigator.pop(context); },
                   child: const Text("Cancel")),
                 TextButton(
-                  onPressed: () { Navigator.pop(context); },
+                  onPressed: () { _saveSleep(); Navigator.pop(context); },
                   child: const Text("Save")),
               ],
             ); 
@@ -227,7 +240,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 setState(() {
                   selectedDay = newSelectedDay;
                   focusedDay = newFocusedDay;
-                  hasSleep = !hasSleep;
+                  sleep = null; // TODO: look for new sleep
+                  comments = []; // TODO: update comments properly
+                  currentTags = []; // TODO: update tag properly
                 });
               }
             },
@@ -264,7 +279,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     children: [
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 9)),
-                      for (var tag in tags)
+                      for (var tag in currentTags)
                         Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.rectangle,
@@ -294,15 +309,15 @@ class _MyHomePageState extends State<MyHomePage> {
                   shrinkWrap: true,
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.grade),
+                      leading: sleep != null ? const Icon(Icons.grade) : null,
                       title: Align(
                         alignment: Alignment.centerLeft,
-                        child: sleep.qualityIntToQualityIcon()),
+                        child: sleep?.qualityIntToQualityIcon()),
                     ),
                     ListTile(
-                      leading: const Icon(Icons.access_time),
+                      leading: sleep != null ? const Icon(Icons.access_time) : null,
                       title: Text(
-                        sleep.amount.toString(),
+                        sleep?.amount.toString() ?? "",
                       )
                     ),
                     for (var comment in comments)
@@ -333,9 +348,10 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           const Padding(padding: EdgeInsets.symmetric(horizontal: 6)),
           FloatingActionButton(
-            onPressed: () { hasSleep ? showEditSleepDialog(context) : showAddSleepDialog(context);},
-            tooltip: hasSleep ? 'Edit Sleep' : 'Add Sleep',
-            child: Icon(hasSleep ? Icons.edit : Icons.add),
+            onPressed: () { DateTime.now().isBefore(selectedDay ?? DateTime.now()) ? null : sleep != null ? showEditSleepDialog(context) : showAddSleepDialog(context);},
+            tooltip: sleep != null ? 'Edit Sleep' : 'Add Sleep',
+            backgroundColor: DateTime.now().isBefore(selectedDay ?? DateTime.now()) ? Colors.grey : Theme.of(context).colorScheme.secondary,
+            child: Icon(sleep != null ? Icons.edit : Icons.add),          
           ),
         ],
       ), // This trailing comma makes auto-formatting nicer for build methods.
