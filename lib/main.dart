@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sleep_tracker_ui/Classes/sleep.dart';
 import 'package:sleep_tracker_ui/Classes/sleep_comment.dart';
 import 'package:sleep_tracker_ui/Classes/tag.dart';
 import 'package:sleep_tracker_ui/mock_data.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:sleep_tracker_ui/Widgets/multi_select_chip.dart';
 
 void main() {
   runApp(const MyApp());
 }
+
+enum DialogMode { add, edit, manage }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -40,21 +44,151 @@ class _MyHomePageState extends State<MyHomePage> {
   DateTime focusedDay = DateTime.now();
   bool hasSleep = false;
   List<Tag> tags = constructMockTags();
+  List<String> selectedTags = [];
   List<SleepComment> comments = constructMockComments();
   Sleep sleep = constructMockSleep()[0];
 
-  void _incrementCounter() {
+  int currentQuality = -1;
+  double currentAmount = -1.0;
+  String currentComment = "";
+
+  void _setCurrentQuality(int newQuality) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values.
+      currentQuality = newQuality;
     });
   }
+
+  showAddSleepDialog(BuildContext context) {
+    var date = DateTime.now().toIso8601String().split('T').first;
+    showDialog(context: context, 
+      builder: (context) {
+        int selectedQuality = -1;
+        TextEditingController amountFieldController = TextEditingController();
+        TextEditingController commentFieldController = TextEditingController();
+        amountFieldController.text = "0";
+        return StatefulBuilder(
+          builder: (context, setState) { 
+            return AlertDialog(
+              title: Text('Add Sleep for $date'),
+              content: Column(
+              children: [
+                Row(
+                  children: [
+                    const Text(" Quality: "),
+                    for (int i = 1; i <= 5; i++)
+                      IconButton(
+                        onPressed: () { _setCurrentQuality(i); setState(() => selectedQuality = i); }, 
+                        icon: Icon(Sleep.externalIntToQualityIcon(i).icon, color: selectedQuality == i ? Theme.of(context).colorScheme.secondary : null)),
+                    ],
+                  ),
+                const Padding(padding: EdgeInsets.symmetric(vertical: 7)),
+                Row(
+                  children: [
+                    const Text("Amount: "),
+                    const Padding(padding: EdgeInsets.symmetric(horizontal: 5)),
+                    Flexible(
+                      child:
+                        TextField(
+                          controller: amountFieldController,
+                    //  initialValue: "0",
+                          showCursor: true,
+                          autocorrect: false,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp('[0-9.]'))
+                          ],
+                          onChanged: (value) {
+                            double? newValue = double.tryParse(value);
+                            if (newValue == null) {
+                              currentAmount = -1;
+                              setState(() => amountFieldController.text = "0");
+                            }
+                            else {
+                              currentAmount = newValue;
+                            }
+                          },
+                      )
+                    ),
+                  ],
+                ),
+                const Padding(padding: EdgeInsets.symmetric(vertical: 7)),
+                Row(children: [
+                    const Text("Tags: "),
+                    const Padding(padding: EdgeInsets.symmetric(horizontal: 5)),
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 200, maxWidth: 200),
+                      child: SingleChildScrollView(
+                        child: MultiSelectChip(
+                          [for (var t in tags) t.name],
+                          (selectedList) {
+                            setState(() {
+                            selectedTags = selectedList;
+                            });
+                          },
+                        ),
+                    )
+                    ),
+                  ],
+                ),
+                const Padding(padding: EdgeInsets.symmetric(vertical: 7)),
+                Row(
+                  children: [
+                    const Text("Notes: "),
+                    const Padding(padding: EdgeInsets.symmetric(horizontal: 5)),
+                    Container(
+                      constraints: const BoxConstraints(minWidth: 100, maxWidth: 200),
+                      child: TextField(
+                        controller: commentFieldController,
+                        minLines: 1,
+                        maxLines: null,
+                        showCursor: true,
+                        autocorrect: false,
+                        onChanged: (value) {
+                            currentComment = value;
+                        },
+                        ),
+                    )
+                  ],
+                ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () { Navigator.pop(context); },
+                  child: const Text("Cancel")),
+                TextButton(
+                  onPressed: () { Navigator.pop(context); },
+                  child: const Text("Save")),
+              ],
+            ); 
+          });
+      },
+    );
+  }
+
+  showEditSleepDialog(BuildContext context) {
+    showDialog(context: context, 
+      builder: (context) {
+        return buildAlertDialog(context, "Edit Sleep", DialogMode.edit, DateTime.now().toIso8601String().split('T').first);
+      },
+    );
+  }
+
+  showManageTagsDialog(BuildContext context) {
+    showDialog(context: context, 
+      builder: (context) {
+        return buildAlertDialog(context, "Manage Tags", DialogMode.manage);
+      },
+    );
+  }
+
+
+  
 
   @override
   Widget build(BuildContext context) {
     DateTime firstDay = DateTime(DateTime.now().year, 1, 1);
     DateTime lastDay = DateTime(DateTime.now().year, DateTime.now().month + 7, 0);
+
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -193,13 +327,13 @@ class _MyHomePageState extends State<MyHomePage> {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           FloatingActionButton(
-            onPressed: _incrementCounter,
+            onPressed: () {showManageTagsDialog(context);},
             tooltip: 'Manage Tags',
             child: const Icon(Icons.label),
           ),
           const Padding(padding: EdgeInsets.symmetric(horizontal: 6)),
           FloatingActionButton(
-            onPressed: _incrementCounter,
+            onPressed: () { hasSleep ? showEditSleepDialog(context) : showAddSleepDialog(context);},
             tooltip: hasSleep ? 'Edit Sleep' : 'Add Sleep',
             child: Icon(hasSleep ? Icons.edit : Icons.add),
           ),
@@ -207,4 +341,64 @@ class _MyHomePageState extends State<MyHomePage> {
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+
+AlertDialog buildAlertDialog(BuildContext context, String title, DialogMode mode, [String info = ""]) {
+  Widget cancelButton = TextButton(
+    onPressed: () { Navigator.pop(context); },
+    child: const Text("Cancel"));
+
+  Widget saveButton = TextButton(
+    onPressed: () { Navigator.pop(context); },
+    child: const Text("Save"));
+
+  String fullTitle = title;
+  if (info.isNotEmpty) {
+    fullTitle = '$fullTitle for $info';
+  }
+
+  Widget? content;
+  switch (mode) {
+    case DialogMode.add: content = buildAddSleepWidget();
+    case DialogMode.edit: content = buildAddSleepWidget();
+    case DialogMode.manage: content = buildAddSleepWidget();
+  }
+
+
+  AlertDialog alert = AlertDialog(
+    title: Text(fullTitle),
+    content: content,
+    actions: [
+      cancelButton,
+      saveButton
+    ],
+  );
+
+  return alert;
+}
+
+Widget? buildAddSleepWidget() {
+  return Column(
+    children: [
+      Row(
+        children: [
+          const Text(" Quality: "),
+          IconButton(onPressed: () { _setCurrentQuality(1); }, icon: Icon(Sleep.externalIntToQualityIcon(1).icon, color: currentQuality == 1 ? Colors.black : null)),
+          IconButton(onPressed: () { _setCurrentQuality(2); }, icon: Sleep.externalIntToQualityIcon(2)),
+          IconButton(onPressed: () { _setCurrentQuality(3); }, icon: Sleep.externalIntToQualityIcon(3)),
+          IconButton(onPressed: () { _setCurrentQuality(4); }, icon: Sleep.externalIntToQualityIcon(4)),
+          IconButton(onPressed: () { _setCurrentQuality(5); }, icon: Sleep.externalIntToQualityIcon(5)),
+        ],)
+    ],
+  );
+}
+
+Widget? buildEditSleepWidget() {
+  return const Text("edit");
+}
+
+Widget? buildManageTagsWidget() {
+  return const Text("manage");
+}
+
+
 }

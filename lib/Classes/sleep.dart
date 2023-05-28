@@ -25,4 +25,17 @@ class Sleep {
 
     return Icon(iconData);
   }
+
+  static Icon externalIntToQualityIcon(int quality) {
+    IconData iconData = Icons.sentiment_neutral_outlined;
+    switch (quality) {
+      case 1: iconData = Icons.sentiment_very_dissatisfied_outlined;
+      case 2: iconData = Icons.sentiment_dissatisfied_outlined;
+      case 3: iconData = Icons.sentiment_neutral_outlined;
+      case 4: iconData = Icons.sentiment_satisfied_outlined;
+      case 5: iconData = Icons.sentiment_very_satisfied_outlined;
+    }
+
+    return Icon(iconData);
+  }
 }
