@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:math';
 
 import 'package:sleep_tracker_ui/Classes/sleep.dart';
@@ -76,6 +77,30 @@ class _MyHomePageState extends State<MyHomePage> {
         comments = sleep?.comments ?? [];
       }
     });
+  }
+
+  void _updateTags(List<Tag> updatedTags) {
+
+    List<int> allTagIds = allTags.map((e) => e.id).toList();
+    List<int> updatedTagIds = updatedTags.map((e) => e.id).toList();
+
+    List<Tag> tagsToAdd = updatedTags.where((element) => !allTagIds.contains(element.id)).toList();
+    List<Tag> tagsToDelete = [];//allTags.where((element) => !updatedTagIds.contains(element.id)).toList();
+
+    List<Tag> tagsToUpdate = [];
+    for (Tag tag in allTags) {
+      if (updatedTagIds.contains(tag.id)) {
+        Tag newTag = updatedTags.firstWhere((element) => tag.id == element.id);
+        if (newTag.name != tag.name || newTag.color != newTag.color) {
+          tagsToUpdate.add(newTag);
+        }
+      }
+      else {
+        tagsToDelete.add(tag);
+      }
+    }
+
+    // TODO: update all tags here and save in db
   }
 
   void _deleteSleep() {
@@ -220,12 +245,25 @@ class _MyHomePageState extends State<MyHomePage> {
     showDialog(context: context, 
       builder: (context) {
         List<Tag> updatedTags = allTags;
-        Color addedColor = Colors.green;
+        Color addedColor = Colors.white;
         String addedName = "";
         int newId = allTags.map((e) => e.id).reduce(max) + 1;
 
         return StatefulBuilder(
           builder: (context, setState) { 
+          void _updateTagColor(int id, Color color) {
+            setState(() {
+              int idx = updatedTags.indexWhere((element) => element.id == id);
+              updatedTags[idx].color = color;
+            });
+          }
+
+          void _addedTagColor(Color color) {
+            setState(() {
+              addedColor = color;
+            });
+          }
+
             return AlertDialog(
               title: const Text('Manage Tags'),
               content: Column(
@@ -246,9 +284,44 @@ class _MyHomePageState extends State<MyHomePage> {
                                   autocorrect: false,
                                   minLines: 1,
                                   maxLines: null,
-                                  showCursor: true),),
+                                  showCursor: true,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      int idx = updatedTags.indexWhere((element) => element.id == t.id);
+                                      updatedTags[idx].name = value;
+                                    },);
+                                  },),),
                               IconButton(icon: Icon(Icons.color_lens, color: t.color,),
-                               onPressed: null,),
+                               onPressed: () {
+                                showDialog(context: context, 
+                                  builder: (context) {
+                                    Color pickerColor = t.color;
+                                    return StatefulBuilder(
+                                      builder: (context, setState) {
+                                        return AlertDialog(
+                                          title: const Text("Pick a color"),
+                                          content: SingleChildScrollView(
+                                            child: ColorPicker(
+                                              pickerColor: pickerColor,
+                                              onColorChanged: (value) {
+                                                setState(() => pickerColor = value);
+                                              },
+                                            ),
+                                          ),
+                                          actions: [
+                                            ElevatedButton(child: const Text("Done"),
+                                            onPressed: () {
+                                              setState(() {
+                                                _updateTagColor(t.id, pickerColor);
+                                              },);
+                                              Navigator.of(context).pop();
+                                            },)
+                                          ],
+                                        );
+                                    },
+                                   );
+                                });
+                               },),
                               IconButton(icon: const Icon(Icons.delete_forever),
                                onPressed: () {
                                 setState(() {
@@ -275,14 +348,48 @@ class _MyHomePageState extends State<MyHomePage> {
                                   },
                                   ),
                                 ),
-                              const IconButton(icon: Icon(Icons.color_lens),
-                               onPressed: null,),
+                                IconButton(icon: Icon(Icons.color_lens, color: addedColor,),
+                                onPressed: () {
+                                  showDialog(context: context, 
+                                    builder: (context) {
+                                      Color pickerColor = addedColor;
+                                      return StatefulBuilder(
+                                        builder: (context, setState) {
+                                          return AlertDialog(
+                                            title: const Text("Pick a color"),
+                                            content: SingleChildScrollView(
+                                              child: ColorPicker(
+                                                pickerColor: pickerColor,
+                                                onColorChanged: (value) {
+                                                  setState(() => pickerColor = value);
+                                                },
+                                              ),
+                                            ),
+                                            actions: [
+                                              ElevatedButton(child: const Text("Done"),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _addedTagColor(pickerColor);
+                                                },);
+                                                Navigator.of(context).pop();
+                                              },)
+                                            ],
+                                          );
+                                      },
+                                    );
+                                  });
+                              }),
                               IconButton(icon: const Icon(Icons.save),
-                               onPressed: () {
-                                setState(() {
-                                  updatedTags.add(Tag(newId, addedName, addedColor));
-                                  newId++;
-                                });
+                                onPressed: () {
+                                  if (addedName.isEmpty) {
+                                    return;
+                                  }
+                                  setState(() {
+                                    updatedTags.add(Tag(newId, addedName, addedColor));
+                                    addedColor = Colors.white;
+                                    addedName = "";
+                                    newId++;
+                                  });
                                }),
                             ],
                           ),
@@ -297,7 +404,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   onPressed: () { Navigator.pop(context); },
                   child: const Text("Cancel")),
                 TextButton(
-                  onPressed: () { _saveSleep(); Navigator.pop(context); },
+                  onPressed: () { _updateTags(updatedTags); Navigator.pop(context); },
                   child: const Text("Save")),
               ],
             ); 
