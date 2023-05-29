@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:math';
+
 import 'package:sleep_tracker_ui/Classes/sleep.dart';
 import 'package:sleep_tracker_ui/Classes/sleep_comment.dart';
 import 'package:sleep_tracker_ui/Classes/tag.dart';
@@ -59,7 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _saveSleep() {
-    // call db save here to construct sleep
+    // TODO: call db save here to construct sleep
 
     if (currentAmount <= 0 || currentQuality < 1) {
       return;
@@ -76,6 +78,22 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void _deleteSleep() {
+    // TODO: delete sleep from db here
+    setState(() {
+      sleep = null;
+      currentTags = [];
+      comments = [];
+    });
+  }
+
+  void _deleteTag(Tag tag) {
+    // TODO: delete tag from db here
+    setState(() {
+      allTags.removeWhere((element) => tag.id == element.id);
+    });
+  }
+
   showSleepDialog(BuildContext context, DialogMode mode) {
     var date = DateTime.now().toIso8601String().split('T').first;
     showDialog(context: context, 
@@ -85,11 +103,25 @@ class _MyHomePageState extends State<MyHomePage> {
         TextEditingController commentFieldController = TextEditingController();
         String prefix = "Add";
 
+        var buttons = [
+          TextButton(
+            onPressed: () { Navigator.pop(context); },
+            child: const Text("Cancel")),
+          TextButton(
+            onPressed: () { _saveSleep(); Navigator.pop(context); },
+            child: const Text("Save")),];
+
         if (mode == DialogMode.edit) {
           amountFieldController.text = currentAmount.toString();
           commentFieldController.text = currentComment.toString();
           prefix = "Edit";
           selectedQuality = currentQuality;
+
+          buttons.insert(1,
+            TextButton(
+              onPressed: () { _deleteSleep(); Navigator.pop(context); },
+              child: const Text("Delete"))
+          );
         }
 
         return StatefulBuilder(
@@ -177,6 +209,89 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 ],
               ),
+              actions: buttons,
+            ); 
+          });
+      },
+    );
+  }
+
+  showManageTagsDialog(BuildContext context) {
+    showDialog(context: context, 
+      builder: (context) {
+        List<Tag> updatedTags = allTags;
+        Color addedColor = Colors.green;
+        String addedName = "";
+        int newId = allTags.map((e) => e.id).reduce(max) + 1;
+
+        return StatefulBuilder(
+          builder: (context, setState) { 
+            return AlertDialog(
+              title: const Text('Manage Tags'),
+              content: Column(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 200,
+                    width: 200,
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (var t in updatedTags)
+                          Row(
+                            children: [
+                              Flexible(child:
+                                TextField(
+                                  controller: TextEditingController(text: t.name),
+                                  autocorrect: false,
+                                  minLines: 1,
+                                  maxLines: null,
+                                  showCursor: true),),
+                              IconButton(icon: Icon(Icons.color_lens, color: t.color,),
+                               onPressed: null,),
+                              IconButton(icon: const Icon(Icons.delete_forever),
+                               onPressed: () {
+                                setState(() {
+                                  updatedTags.removeWhere((element) => t.id == element.id);
+                                });
+                               },),
+                            ],
+                          ),
+                          const Padding(padding: EdgeInsets.symmetric(vertical: 7)),
+                          Row(
+                            children: [
+                              Flexible(child:
+                                TextField(
+                                  decoration: const InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: "Add Tag"
+                                  ),
+                                  autocorrect: false,
+                                  minLines: 1,
+                                  maxLines: null,
+                                  showCursor: true,
+                                  onChanged: (value) {
+                                    addedName = value;
+                                  },
+                                  ),
+                                ),
+                              const IconButton(icon: Icon(Icons.color_lens),
+                               onPressed: null,),
+                              IconButton(icon: const Icon(Icons.save),
+                               onPressed: () {
+                                setState(() {
+                                  updatedTags.add(Tag(newId, addedName, addedColor));
+                                  newId++;
+                                });
+                               }),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                 ],
+              ),
               actions: [
                 TextButton(
                   onPressed: () { Navigator.pop(context); },
@@ -190,17 +305,6 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     );
   }
-
-  showManageTagsDialog(BuildContext context) {
-    showDialog(context: context, 
-      builder: (context) {
-        return buildAlertDialog(context, "Manage Tags", DialogMode.manage);
-      },
-    );
-  }
-
-
-  
 
   @override
   Widget build(BuildContext context) {
@@ -366,64 +470,4 @@ class _MyHomePageState extends State<MyHomePage> {
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
-
-AlertDialog buildAlertDialog(BuildContext context, String title, DialogMode mode, [String info = ""]) {
-  Widget cancelButton = TextButton(
-    onPressed: () { Navigator.pop(context); },
-    child: const Text("Cancel"));
-
-  Widget saveButton = TextButton(
-    onPressed: () { Navigator.pop(context); },
-    child: const Text("Save"));
-
-  String fullTitle = title;
-  if (info.isNotEmpty) {
-    fullTitle = '$fullTitle for $info';
-  }
-
-  Widget? content;
-  switch (mode) {
-    case DialogMode.add: content = buildAddSleepWidget();
-    case DialogMode.edit: content = buildAddSleepWidget();
-    case DialogMode.manage: content = buildAddSleepWidget();
-  }
-
-
-  AlertDialog alert = AlertDialog(
-    title: Text(fullTitle),
-    content: content,
-    actions: [
-      cancelButton,
-      saveButton
-    ],
-  );
-
-  return alert;
-}
-
-Widget? buildAddSleepWidget() {
-  return Column(
-    children: [
-      Row(
-        children: [
-          const Text(" Quality: "),
-          IconButton(onPressed: () { _setCurrentQuality(1); }, icon: Icon(Sleep.externalIntToQualityIcon(1).icon, color: currentQuality == 1 ? Colors.black : null)),
-          IconButton(onPressed: () { _setCurrentQuality(2); }, icon: Sleep.externalIntToQualityIcon(2)),
-          IconButton(onPressed: () { _setCurrentQuality(3); }, icon: Sleep.externalIntToQualityIcon(3)),
-          IconButton(onPressed: () { _setCurrentQuality(4); }, icon: Sleep.externalIntToQualityIcon(4)),
-          IconButton(onPressed: () { _setCurrentQuality(5); }, icon: Sleep.externalIntToQualityIcon(5)),
-        ],)
-    ],
-  );
-}
-
-Widget? buildEditSleepWidget() {
-  return const Text("edit");
-}
-
-Widget? buildManageTagsWidget() {
-  return const Text("manage");
-}
-
-
 }

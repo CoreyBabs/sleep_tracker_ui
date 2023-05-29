@@ -4,9 +4,7 @@ A project to learn flutter and act as the frontend to https://github.com/CoreyBa
 
 ## TODO
 
-* Add sleep modal
-* edit sleep modal
-* manage tags modal
+* manage tags modal (color picker and save behavior)
 * get data from gql api
 * stats page
 
