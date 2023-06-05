@@ -1,40 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:math';
 
 import 'package:sleep_tracker_ui/Classes/sleep.dart';
 import 'package:sleep_tracker_ui/Classes/sleep_comment.dart';
 import 'package:sleep_tracker_ui/Classes/tag.dart';
-import 'package:sleep_tracker_ui/mock_data.dart';
-import 'package:table_calendar/table_calendar.dart';
 import 'package:sleep_tracker_ui/Widgets/multi_select_chip.dart';
+import 'package:sleep_tracker_ui/API/api.dart';
+
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp(api: GraphQlApi()));
 }
 
 enum DialogMode { add, edit, manage }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, required this.api});
+
+  final GraphQlApi api;
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sleep Journal',
-      theme: ThemeData.dark(),
-      themeMode: ThemeMode.dark,
-      home: const MyHomePage(title: 'Sleep Journal'),
+        title: 'Sleep Journal',
+        theme: ThemeData.dark(),
+        themeMode: ThemeMode.dark,
+        home: MyHomePage(title: 'Sleep Journal', api: api),
+
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  const MyHomePage({super.key, required this.title, required this.api});
 
   final String title;
+  final GraphQlApi api;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -45,7 +50,7 @@ class _MyHomePageState extends State<MyHomePage> {
   CalendarFormat calendarFormat = CalendarFormat.month;
   DateTime? selectedDay; 
   DateTime focusedDay = DateTime.now();
-  List<Tag> allTags = constructMockTags();
+  List<Tag> allTags = [];
   List<String> selectedNames = [];
   List<SleepComment> comments = [];//constructMockComments();
   Sleep? sleep;
@@ -417,7 +422,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     DateTime firstDay = DateTime(DateTime.now().year, 1, 1);
     DateTime lastDay = DateTime(DateTime.now().year, DateTime.now().month + 7, 0);
-
+    widget.api.allTagsQuery().then((value) => allTags = value);
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -430,7 +435,7 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title,
         style: TextStyle(color: Theme.of(context).colorScheme.inversePrimary)),
       ),
-      body: 
+      body:
         Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[

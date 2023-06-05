@@ -4,7 +4,6 @@ A project to learn flutter and act as the frontend to https://github.com/CoreyBa
 
 ## TODO
 
-* manage tags modal (color picker and save behavior)
 * get data from gql api
 * stats page
 
