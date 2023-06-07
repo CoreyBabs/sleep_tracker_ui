@@ -5,6 +5,7 @@ A project to learn flutter and act as the frontend to https://github.com/CoreyBa
 ## TODO
 
 * get data from gql api
-* stats page
+    * save, update, delete mutations
+* stats page (v2)
 
 
