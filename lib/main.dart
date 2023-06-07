@@ -54,11 +54,32 @@ class _MyHomePageState extends State<MyHomePage> {
   List<String> selectedNames = [];
   List<SleepComment> comments = [];//constructMockComments();
   Sleep? sleep;
+  List<Sleep> sleepsInMonth = [];
 
   int currentQuality = -1;
   double currentAmount = -1.0;
   String currentComment = "";
   List<Tag> currentTags = [];
+
+  void _setSleeps(List<Sleep> sleeps) {
+    sleepsInMonth = sleeps;
+    _setSleep();
+  }
+
+  void _setSleep() {
+    setState(() {
+      if (sleepsInMonth.isNotEmpty && sleepsInMonth.any((element) => isSameDay(element.night, focusedDay))) {
+        sleep = sleepsInMonth.firstWhere((element) => isSameDay(element.night, focusedDay));
+        currentTags = sleep?.tags ?? [];
+        comments = sleep?.comments ?? [];
+      }
+      else {
+        sleep = null;
+        currentTags = [];
+        comments = [];
+      }
+    });
+  }
 
   void _setCurrentQuality(int newQuality) {
     setState(() {
@@ -422,7 +443,14 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     DateTime firstDay = DateTime(DateTime.now().year, 1, 1);
     DateTime lastDay = DateTime(DateTime.now().year, DateTime.now().month + 7, 0);
-    widget.api.allTagsQuery().then((value) => allTags = value);
+
+    if (sleepsInMonth.isEmpty) {
+      widget.api.sleepsInMonthQuery(DateTime.now()).then((value) => _setSleeps(value));
+    }
+    if (allTags.isEmpty) {
+      widget.api.allTagsQuery().then((value) => allTags = value);
+    }
+
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -461,9 +489,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 setState(() {
                   selectedDay = newSelectedDay;
                   focusedDay = newFocusedDay;
-                  sleep = null; // TODO: look for new sleep
-                  comments = []; // TODO: update comments properly
-                  currentTags = []; // TODO: update tag properly
+                  _setSleep();
                 });
               }
             },
@@ -478,6 +504,7 @@ class _MyHomePageState extends State<MyHomePage> {
             onPageChanged: (newFocusedDay) {
               // No need to call `setState()` here
               focusedDay = newFocusedDay;
+              widget.api.sleepsInMonthQuery(focusedDay).then((value) => _setSleeps(value));
             },), 
             const Padding(padding: EdgeInsets.symmetric(vertical: 10)),
             Align(
@@ -569,13 +596,13 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           const Padding(padding: EdgeInsets.symmetric(horizontal: 6)),
           FloatingActionButton(
-            onPressed: () { DateTime.now().isBefore(selectedDay ?? DateTime.now()) 
+            onPressed: () { DateTime.now().isBefore(focusedDay) 
               ? null 
               : sleep != null 
                 ? showSleepDialog(context, DialogMode.edit) 
                 : showSleepDialog(context, DialogMode.add);},
             tooltip: sleep != null ? 'Edit Sleep' : 'Add Sleep',
-            backgroundColor: DateTime.now().isBefore(selectedDay ?? DateTime.now()) ? Colors.grey : Theme.of(context).colorScheme.secondary,
+            backgroundColor: DateTime.now().isBefore(focusedDay) ? Colors.grey : Theme.of(context).colorScheme.secondary,
             child: Icon(sleep != null ? Icons.edit : Icons.add),          
           ),
         ],
