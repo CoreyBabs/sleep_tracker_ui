@@ -72,11 +72,17 @@ class _MyHomePageState extends State<MyHomePage> {
         sleep = sleepsInMonth.firstWhere((element) => isSameDay(element.night, focusedDay));
         currentTags = sleep?.tags ?? [];
         comments = sleep?.comments ?? [];
+        currentAmount = sleep?.amount ?? -1.0;
+        currentQuality = sleep?.quality ?? -1;
+        currentComment = comments.isNotEmpty ? comments.first.comment : "";
       }
       else {
         sleep = null;
         currentTags = [];
         comments = [];
+        currentAmount = -1;
+        currentQuality = -1;
+        currentComment = "";
       }
     });
   }
@@ -94,15 +100,22 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
 
-    setState(() {
-      currentTags = Tag.getTagsByName(allTags, selectedNames);
-      sleep = Sleep(-1, currentAmount, currentQuality, DateTime.now());
-      sleep?.tags = currentTags;
-      if (currentComment.isNotEmpty) {
-        sleep?.comments = [SleepComment(-1, sleep?.id ?? -1, currentComment)];
-        comments = sleep?.comments ?? [];
-      }
-    });
+    currentTags = Tag.getTagsByName(allTags, selectedNames);
+    // TODO: call db save here
+    Sleep sleepToSave = Sleep(-1, currentAmount, currentQuality, focusedDay);
+    if (currentTags.isNotEmpty) {
+      sleepToSave.tags = currentTags;
+    }
+
+    if (currentComment.isNotEmpty) {
+      sleepToSave.comments = [SleepComment(-1, -1, currentComment)];
+    }
+
+    widget.api.saveSleep(sleepToSave)
+      .then((value) {
+        widget.api.sleepsInMonthQuery(focusedDay)
+         .then((value) => _setSleeps(value));
+      },);
   }
 
   void _updateTags(List<Tag> updatedTags) {
@@ -146,7 +159,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   showSleepDialog(BuildContext context, DialogMode mode) {
-    var date = DateTime.now().toIso8601String().split('T').first;
+    var date = focusedDay.toIso8601String().split('T').first;
     showDialog(context: context, 
       builder: (context) {
         int selectedQuality = -1;

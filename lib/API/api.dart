@@ -1,4 +1,5 @@
 import 'package:graphql/client.dart';
+import 'package:sleep_tracker_ui/API/mutations.dart';
 import 'package:sleep_tracker_ui/Classes/sleep_comment.dart';
 
 import 'package:sleep_tracker_ui/utils.dart';
@@ -23,6 +24,7 @@ class GraphQlApi {
   Future<List<Tag>> allTagsQuery() async {
     final QueryOptions options = QueryOptions(
       document: gql(allTagsDocument),
+      fetchPolicy: FetchPolicy.networkOnly
     );
 
     final QueryResult result = await client.query(options);
@@ -43,7 +45,8 @@ class GraphQlApi {
           'month': month.month,
           'year' : month.year
         }
-      }
+      },
+      fetchPolicy: FetchPolicy.networkOnly,
     );
 
     final QueryResult result = await client.query(options);
@@ -77,5 +80,36 @@ class GraphQlApi {
     }
 
     return sleeps;    
+  }
+
+  Future<int> saveSleep(Sleep sleep) async {
+    Map<String, dynamic> variable = {};
+    variable['night'] = sleep.night.toIso8601String().split('T').first;
+    variable['amount'] = sleep.amount;
+    variable['quality'] = sleep.quality;
+
+    if (sleep.tags != null && (sleep.tags?.isNotEmpty ?? false)) {
+      variable['tags'] = sleep.tags?.map((e) => e.id).toList();
+    }
+
+    if (sleep.comments != null && (sleep.comments?.isNotEmpty ?? false)) {
+      variable['comments'] = sleep.comments?.map((e) => e.comment).toList();
+    }
+
+    final MutationOptions options = MutationOptions(
+      document: gql(saveSleepDocument),
+      variables: <String, dynamic> {
+        "input" : variable
+      },
+      fetchPolicy: FetchPolicy.networkOnly
+    );
+
+    final QueryResult result = await client.mutate(options);
+    if (result.hasException) {
+      print(result.exception);
+      return -1; // Should handle erros better here
+    }
+
+    return result.data?['addSleep']['id'];
   }
 }
