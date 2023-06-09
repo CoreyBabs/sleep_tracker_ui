@@ -60,8 +60,10 @@ class _MyHomePageState extends State<MyHomePage> {
   double currentAmount = -1.0;
   String currentComment = "";
   List<Tag> currentTags = [];
+  bool sleepsQueried = false;
 
   void _setSleeps(List<Sleep> sleeps) {
+    sleepsQueried = true;
     sleepsInMonth = sleeps;
     _setSleep();
   }
@@ -94,14 +96,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _saveSleep() {
-    // TODO: call db save here to construct sleep
-
     if (currentAmount <= 0 || currentQuality < 1) {
       return;
     }
 
     currentTags = Tag.getTagsByName(allTags, selectedNames);
-    // TODO: call db save here
     Sleep sleepToSave = Sleep(-1, currentAmount, currentQuality, focusedDay);
     if (currentTags.isNotEmpty) {
       sleepToSave.tags = currentTags;
@@ -457,12 +456,11 @@ class _MyHomePageState extends State<MyHomePage> {
     DateTime firstDay = DateTime(DateTime.now().year, 1, 1);
     DateTime lastDay = DateTime(DateTime.now().year, DateTime.now().month + 7, 0);
 
-    if (sleepsInMonth.isEmpty) {
+    if (!sleepsQueried) {
       widget.api.sleepsInMonthQuery(DateTime.now()).then((value) => _setSleeps(value));
     }
-    if (allTags.isEmpty) {
-      widget.api.allTagsQuery().then((value) => allTags = value);
-    }
+    
+    widget.api.allTagsQuery().then((value) => allTags = value);
 
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
