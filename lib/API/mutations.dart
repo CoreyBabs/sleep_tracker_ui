@@ -10,3 +10,9 @@ mutation AddSleep($input: SleepInput!) {
   }
 }
 """;
+
+String deleteSleepDocument = r"""
+mutation DeleteSleep($input: Int!) {
+  deleteSleep(sleepId: $input) 
+}
+""";

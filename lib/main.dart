@@ -142,11 +142,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _deleteSleep() {
-    // TODO: delete sleep from db here
     setState(() {
-      sleep = null;
-      currentTags = [];
-      comments = [];
+      widget.api.deleteSleep(sleep!.id)
+        .then((value) {
+          widget.api.sleepsInMonthQuery(focusedDay)
+          .then((value) => _setSleeps(value));
+        },);
     });
   }
 

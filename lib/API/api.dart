@@ -112,4 +112,19 @@ class GraphQlApi {
 
     return result.data?['addSleep']['id'];
   }
+
+  Future deleteSleep(int id) async {
+    final MutationOptions options = MutationOptions(
+      document: gql(deleteSleepDocument),
+      variables: <String, dynamic> {
+        'input': id
+      },
+      fetchPolicy: FetchPolicy.networkOnly,
+    );
+
+    final QueryResult result = await client.mutate(options);
+    if (result.hasException) {
+      return; // Should handle erros better here
+    }
+  }
 }
