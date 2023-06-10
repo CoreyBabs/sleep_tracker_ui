@@ -97,8 +97,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _editSleep() {
     bool dirty = false;
-    int? newQuality = null;
-    double? newAmount = null;
+    int? newQuality;
+    double? newAmount;
     if (currentAmount != sleep!.amount) {
       newAmount = currentAmount;
     }
@@ -348,14 +348,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
         return StatefulBuilder(
           builder: (context, setState) { 
-          void _updateTagColor(int id, Color color) {
+          void updateTagColor(int id, Color color) {
             setState(() {
               int idx = updatedTags.indexWhere((element) => element.id == id);
               updatedTags[idx].color = color;
             });
           }
 
-          void _addedTagColor(Color color) {
+          void addedTagColor(Color color) {
             setState(() {
               addedColor = color;
             });
@@ -409,7 +409,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                             ElevatedButton(child: const Text("Done"),
                                             onPressed: () {
                                               setState(() {
-                                                _updateTagColor(t.id, pickerColor);
+                                                updateTagColor(t.id, pickerColor);
                                               },);
                                               Navigator.of(context).pop();
                                             },)
@@ -466,7 +466,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                               ElevatedButton(child: const Text("Done"),
                                               onPressed: () {
                                                 setState(() {
-                                                  _addedTagColor(pickerColor);
+                                                  addedTagColor(pickerColor);
                                                 },);
                                                 Navigator.of(context).pop();
                                               },)
