@@ -14,11 +14,16 @@ class MultiSelectChip extends StatefulWidget {
 class _MultiSelectChipState extends State<MultiSelectChip> {
   // String selectedChoice = "";
   List<String> selectedChoices = [];
+  bool initialLoad = true;
 
   _buildChoiceList() {
     List<Widget> choices = [];
 
-    widget.initialSelected.forEach((element) {selectedChoices.add(element);});
+    if (initialLoad) {
+      widget.initialSelected.forEach((element) {selectedChoices.add(element);});
+      initialLoad = false;
+    }
+    
 
     widget.reportList.forEach((item) {
       choices.add(Container(
