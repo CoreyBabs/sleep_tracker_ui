@@ -7,6 +7,9 @@ import 'package:sleep_tracker_ui/API/queries.dart';
 import 'package:sleep_tracker_ui/Classes/tag.dart';
 import 'package:sleep_tracker_ui/Classes/sleep.dart';
 
+// TODO: Update sleep, update tag, update comment, add tag to sleep, delete tag from sleep, add comment to sleep, delete comment
+// TODO: add tag, delete tag, 
+
 class GraphQlApi {
   late GraphQLClient client;
 
@@ -19,6 +22,38 @@ class GraphQlApi {
       /// **NOTE** The default store is the InMemoryStore, which does NOT persist to disk
       cache: GraphQLCache(),
       link: httpLink);
+  }
+
+  Sleep _dbSleepToSleep(dynamic dbSleep) {
+    Sleep sleep = Sleep(
+      dbSleep['id'],
+      dbSleep['amount'],
+      dbSleep['quality'],
+      DateTime(dbSleep['night']['year'], dbSleep['night']['month'], dbSleep['night']['day']));
+
+      if (dbSleep['tags'].length > 0) {
+        sleep.tags = [];
+        for (int j = 0; j < dbSleep['tags'].length; j++) {
+          sleep.tags?.add(_dbTagToTag(dbSleep['tags'][j]));
+        }
+      }
+
+      if (dbSleep['comments'].length > 0) {
+        sleep.comments = [];
+        for (int j = 0; j < dbSleep['comments'].length; j++) {
+          sleep.comments?.add(_dbCommentToComment(dbSleep['comments'][j]));
+        }
+      }
+
+      return sleep;
+  }
+
+  Tag _dbTagToTag(dynamic dbTag) {
+    return Tag(dbTag['id'], dbTag['name'], intToColor(dbTag['color']));
+  }
+
+  SleepComment _dbCommentToComment(dynamic dbComment) {
+    return SleepComment(dbComment['id'], dbComment['sleepId'], dbComment['comment']);
   }
 
   Future<List<Tag>> allTagsQuery() async {
@@ -34,7 +69,7 @@ class GraphQlApi {
 
     final List<dynamic> dtags = result.data?['allTags'] as List<dynamic>;
 
-    return dtags.map((e) => Tag(e['id'], e['name'], intToColor(e['color']))).toList();
+    return dtags.map((e) => _dbTagToTag(e)).toList();
   }
 
   Future<List<Sleep>> sleepsInMonthQuery(DateTime month) async {
@@ -56,29 +91,7 @@ class GraphQlApi {
 
     final List<dynamic> dsleeps = result.data?['sleepsByMonth'] as List<dynamic>;
 
-    List<Sleep> sleeps = dsleeps.map((e) =>
-      Sleep(e['id'], e['amount'], e['quality'], DateTime(e['night']['year'], e['night']['month'], e['night']['day']))
-    ).toList();
-
-
-    for (int i = 0; i < dsleeps.length; i++) {
-      var sleep = dsleeps[i];
-      if (sleep['tags'].length > 0) {
-        sleeps[i].tags = [];
-        for (int j = 0; j < sleep['tags'].length; j++) {
-          sleeps[i].tags?.add(Tag(sleep['tags'][j]['id'], sleep['tags'][j]['name'], intToColor(sleep['tags'][j]['color'])));
-        }
-      }
-
-      if (sleep['comments'].length > 0) {
-        sleeps[i].comments = [];
-        for (int j = 0; j < sleep['comments'].length; j++) {
-          sleeps[i].comments?.add(
-            SleepComment(sleep['comments'][j]['id'], sleep['comments'][j]['sleepId'], sleep['comments'][j]['comment']));
-        }
-      }
-    }
-
+    List<Sleep> sleeps = dsleeps.map((e) => _dbSleepToSleep(e)).toList();
     return sleeps;    
   }
 
