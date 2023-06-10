@@ -7,8 +7,7 @@ import 'package:sleep_tracker_ui/API/queries.dart';
 import 'package:sleep_tracker_ui/Classes/tag.dart';
 import 'package:sleep_tracker_ui/Classes/sleep.dart';
 
-// TODO: Update sleep, update tag, update comment, add tag to sleep, delete tag from sleep, add comment to sleep, delete comment
-// TODO: add tag, delete tag, 
+// TODO: add tag, delete tag, update tag 
 
 class GraphQlApi {
   late GraphQLClient client;
@@ -131,6 +130,125 @@ class GraphQlApi {
       document: gql(deleteSleepDocument),
       variables: <String, dynamic> {
         'input': id
+      },
+      fetchPolicy: FetchPolicy.networkOnly,
+    );
+
+    final QueryResult result = await client.mutate(options);
+    if (result.hasException) {
+      return; // Should handle erros better here
+    }
+  }
+
+  Future<Sleep?> updateSleep(int sleepId, int? quality, double? amount) async {
+    if (quality == null && amount == null) {
+      return null;
+    }
+
+    Map<String, dynamic> variable = {};
+    variable['sleepId'] = sleepId;
+    if (quality != null) {
+      variable['quality'] = quality;
+    }
+    if (amount != null) {
+      variable['amount'] = amount;
+    }
+
+    final MutationOptions options = MutationOptions(
+      document: gql(updateSleepDocument),
+      variables: <String, dynamic> { 'input' : variable },
+      fetchPolicy: FetchPolicy.networkOnly);
+
+    final QueryResult result = await client.mutate(options);
+
+     if (result.hasException) {
+      print(result.exception);
+      return null; // Should handle erros better here
+    }
+
+    return _dbSleepToSleep(result.data?['updateSleep']);
+  }
+
+  Future addTagsToSleep(int sleepId, List<int> tagIds) async {
+    Map<String, dynamic> variable = {};
+    variable['sleepId'] = sleepId;
+    variable['tagIds'] = tagIds;
+
+    final MutationOptions options = MutationOptions(
+      document: gql(addTagToSleepDocument),
+      variables: <String, dynamic> { 'input' : variable },
+      fetchPolicy: FetchPolicy.networkOnly);
+
+    final QueryResult result = await client.mutate(options);
+
+     if (result.hasException) {
+      print(result.exception);
+      return; // Should handle erros better here
+    }
+  }
+
+  Future deleteTagsFromSleep(int sleepId, List<int> tagIds) async {
+    for (var id in tagIds) {
+      Map<String, dynamic> variable = {};
+      variable['sleepId'] = sleepId;
+      variable['tagId'] = id;
+
+      final MutationOptions options = MutationOptions(
+        document: gql(removeTagFromSleepDocument),
+        variables: <String, dynamic> { 'input': variable},
+        fetchPolicy: FetchPolicy.networkOnly);
+
+      final QueryResult result = await client.mutate(options);
+
+      if (result.hasException) {
+        print(result.exception);
+        continue; // Should handle erros better here
+      }
+    }
+  }
+
+  Future addComment(int sleepId, String comment) async {
+    Map<String, dynamic> variable = {};
+    variable['sleepId'] = sleepId;
+    variable['comment'] = comment;
+
+    final MutationOptions options = MutationOptions(
+      document: gql(addCommentToSleepDocument),
+      variables: <String, dynamic> { 'input' : variable },
+      fetchPolicy: FetchPolicy.networkOnly);
+
+    final QueryResult result = await client.mutate(options);
+
+     if (result.hasException) {
+      print(result.exception);
+      return; // Should handle erros better here
+    }
+  }
+
+  Future deleteComment(int commentId) async {
+    final MutationOptions options = MutationOptions(
+      document: gql(deleteCommentDocument),
+      variables: <String, dynamic> {
+        'input': commentId
+      },
+      fetchPolicy: FetchPolicy.networkOnly,
+    );
+
+    final QueryResult result = await client.mutate(options);
+    if (result.hasException) {
+      return; // Should handle erros better here
+    }
+  }
+
+  Future updateComment(int commentId, String comment) async {
+    Map<String, dynamic> variable = {};
+    variable['commentId'] = commentId;
+    variable['comment'] = comment;
+
+    final MutationOptions options = MutationOptions(
+      document: gql(updateCommentDocument),
+      variables: <String, dynamic> {
+        'input': variable
       },
       fetchPolicy: FetchPolicy.networkOnly,
     );

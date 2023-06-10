@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math';
@@ -45,14 +46,13 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-// https://github.com/aleksanderwozniak/table_calendar/blob/master/example/lib/pages/basics_example.dart
 class _MyHomePageState extends State<MyHomePage> {
   CalendarFormat calendarFormat = CalendarFormat.month;
   DateTime? selectedDay; 
   DateTime focusedDay = DateTime.now();
   List<Tag> allTags = [];
   List<String> selectedNames = [];
-  List<SleepComment> comments = [];//constructMockComments();
+  List<SleepComment> comments = [];
   Sleep? sleep;
   List<Sleep> sleepsInMonth = [];
 
@@ -95,26 +95,91 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _saveSleep() {
+  void _editSleep() {
+    bool dirty = false;
+    int? newQuality = null;
+    double? newAmount = null;
+    if (currentAmount != sleep!.amount) {
+      newAmount = currentAmount;
+    }
+
+    if (currentQuality != sleep!.quality) {
+      newQuality = currentQuality;
+    }
+
+    if (newQuality != null || newAmount != null) {
+      widget.api.updateSleep(sleep!.id, newQuality, newAmount);
+      dirty = true;
+    }
+
+    List<int> currentTagIds = currentTags.map((e) => e.id).toList();
+    List<int> sleepTagIds = sleep!.tags?.map((e) => e.id).toList() ?? [];
+    if (!listEquals(currentTags.map((e) => e.id).toList(), sleep!.tags?.map((e) => e.id).toList())) {
+      List<int> tagsToDelete = sleepTagIds.where((e) => !currentTagIds.contains(e)).toList();
+      List<int> tagsToAdd = currentTagIds.where((e) => !sleepTagIds.contains(e)).toList();
+
+      if (tagsToDelete.isNotEmpty) {
+        widget.api.deleteTagsFromSleep(sleep!.id, tagsToDelete);
+        dirty = true;
+      }
+      if (tagsToAdd.isNotEmpty) {
+        widget.api.addTagsToSleep(sleep!.id, tagsToAdd);
+        dirty = true;
+      }
+    }
+
+    if (currentComment.isEmpty && comments.isNotEmpty) {
+      widget.api.deleteComment(comments[0].id);
+      dirty = true;
+    }
+    else if (currentComment.isNotEmpty && comments.isEmpty) {
+      widget.api.addComment(sleep!.id, currentComment);
+      dirty = true;
+    }
+    else if (currentComment.isNotEmpty && comments.isNotEmpty && currentComment != comments[0].comment) {
+      widget.api.updateComment(comments[0].id, currentComment);
+      dirty = true;
+    }
+
+    if (dirty) {
+      widget.api.sleepsInMonthQuery(focusedDay)
+            .then((value) => _setSleeps(value));
+    }
+  }
+
+  void _saveSleep(DialogMode mode) {
     if (currentAmount <= 0 || currentQuality < 1) {
       return;
     }
 
-    currentTags = Tag.getTagsByName(allTags, selectedNames);
-    Sleep sleepToSave = Sleep(-1, currentAmount, currentQuality, focusedDay);
-    if (currentTags.isNotEmpty) {
-      sleepToSave.tags = currentTags;
+
+    if (selectedNames.isNotEmpty) {
+      currentTags = Tag.getTagsByName(allTags, selectedNames);
+    }
+    else {
+      currentTags = [];
     }
 
-    if (currentComment.isNotEmpty) {
-      sleepToSave.comments = [SleepComment(-1, -1, currentComment)];
+    if (mode == DialogMode.edit) {
+      _editSleep();
     }
+    else {
+      currentTags = Tag.getTagsByName(allTags, selectedNames);
+      Sleep sleepToSave = Sleep(-1, currentAmount, currentQuality, focusedDay);
+      if (currentTags.isNotEmpty) {
+        sleepToSave.tags = currentTags;
+      }
 
-    widget.api.saveSleep(sleepToSave)
-      .then((value) {
-        widget.api.sleepsInMonthQuery(focusedDay)
-         .then((value) => _setSleeps(value));
-      },);
+      if (currentComment.isNotEmpty) {
+        sleepToSave.comments = [SleepComment(-1, -1, currentComment)];
+      }
+
+      widget.api.saveSleep(sleepToSave)
+        .then((value) {
+          widget.api.sleepsInMonthQuery(focusedDay)
+          .then((value) => _setSleeps(value));
+        },);
+    }
   }
 
   void _updateTags(List<Tag> updatedTags) {
@@ -151,13 +216,6 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _deleteTag(Tag tag) {
-    // TODO: delete tag from db here
-    setState(() {
-      allTags.removeWhere((element) => tag.id == element.id);
-    });
-  }
-
   showSleepDialog(BuildContext context, DialogMode mode) {
     var date = focusedDay.toIso8601String().split('T').first;
     showDialog(context: context, 
@@ -172,7 +230,7 @@ class _MyHomePageState extends State<MyHomePage> {
             onPressed: () { Navigator.pop(context); },
             child: const Text("Cancel")),
           TextButton(
-            onPressed: () { _saveSleep(); Navigator.pop(context); },
+            onPressed: () { _saveSleep(mode); Navigator.pop(context); },
             child: const Text("Save")),];
 
         if (mode == DialogMode.edit) {
