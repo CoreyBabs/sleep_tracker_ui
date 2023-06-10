@@ -141,7 +141,7 @@ mutation AddCommentToSleep($input: AddCommentToSleepInput!) {
 }
 """;
 
-String deleteCommentDocument = r""" {
+String deleteCommentDocument = r"""
 mutation DeleteComment($input: Int!) {
   deleteComment(commentId: $input) 
 }
