@@ -91,7 +91,7 @@ mutation AddTagToSleep($input: AddTagsToSleepInput!) {
 
 String removeTagFromSleepDocument = r"""
 mutation RemoveTagToSleep($input: RemoveTagFromSleepInput!) {
-  addTagsToSleep(removeTagInput: $input) {
+  removeTagFromSleep(removeTagInput: $input) {
     id
     night {
       day
