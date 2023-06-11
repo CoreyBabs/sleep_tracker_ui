@@ -2,10 +2,12 @@
 
 A project to learn flutter and act as the frontend to https://github.com/CoreyBabs/sleep-tracker.
 
-## TODO
+An app to act as a sleep and dream journal. Keep track of quality and amount of sleep, add labels to a night to track patterns,
+and add notes to keep a dream journal.
 
-* get data from gql api
-    * save, update, delete mutations
-* stats page (v2)
+Future Changes (v2.0):
+* Stats page: Generate stats based on data and labels
+* Better async support
+* Refactoring for easier to read and maintain code
 
 
