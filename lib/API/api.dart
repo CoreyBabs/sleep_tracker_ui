@@ -258,4 +258,68 @@ class GraphQlApi {
       return; // Should handle erros better here
     }
   }
+
+  Future updateTag(int tagId, String? name, int? color) async {
+    if (name == null && color == null) {
+      return;
+    }
+
+    Map<String, dynamic> variable = {};
+    variable['tagId'] = tagId;
+
+    if (name != null) {
+      variable['name'] = name;
+    }
+
+    if (color != null) {
+      variable['color'] = color;
+    }
+
+    final MutationOptions options = MutationOptions(
+      document: gql(updateTagDocument),
+      variables: <String, dynamic> {
+        'input': variable
+      },
+      fetchPolicy: FetchPolicy.networkOnly,
+    );
+
+    final QueryResult result = await client.mutate(options);
+    if (result.hasException) {
+      return; // Should handle erros better here
+    }
+  }
+
+  Future addTag(String name, int color) async {
+    Map<String, dynamic> variable = {};
+    variable['name'] = name;
+    variable['color'] = color;
+
+    final MutationOptions options = MutationOptions(
+      document: gql(addTagDocument),
+      variables: <String, dynamic> {
+        'input': variable
+      },
+      fetchPolicy: FetchPolicy.networkOnly,
+    );
+
+    final QueryResult result = await client.mutate(options);
+    if (result.hasException) {
+      return; // Should handle erros better here
+    }
+  }
+
+  Future deleteTag(int tagId) async{
+    final MutationOptions options = MutationOptions(
+      document: gql(deleteTagDocument),
+      variables: <String, dynamic> {
+        'input': tagId
+      },
+      fetchPolicy: FetchPolicy.networkOnly,
+    );
+
+    final QueryResult result = await client.mutate(options);
+    if (result.hasException) {
+      return; // Should handle erros better here
+    }
+  }
 }

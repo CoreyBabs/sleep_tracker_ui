@@ -157,7 +157,7 @@ mutation AddTag($input: TagInput!) {
 }
 """;
 
-String deleteTagDocument = r""" {
+String deleteTagDocument = r"""
 mutation DeleteTag($input: Int!) {
   deleteTag(tagId: $input) 
 }

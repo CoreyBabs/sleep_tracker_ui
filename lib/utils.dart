@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 Color intToColor(int rgb) {
   (int, int, int) components = intToComponents(rgb);
-  return Color.fromARGB(128, components.$1, components.$2, components.$3);
+  return Color.fromARGB(255, components.$1, components.$2, components.$3);
 }
 
 (int, int, int) intToComponents(int rgb) {

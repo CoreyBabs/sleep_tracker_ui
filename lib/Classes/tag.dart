@@ -10,5 +10,9 @@ class Tag {
   static List<Tag> getTagsByName(List<Tag> allTags, List<String> names) {
     return [for (var n in names) allTags.firstWhere((t) => t.name == n)];
   }
+
+  Tag copy() {
+    return Tag(id, name, color);
+  }
 }
 

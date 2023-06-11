@@ -10,6 +10,7 @@ import 'package:sleep_tracker_ui/Widgets/multi_select_chip.dart';
 import 'package:sleep_tracker_ui/API/api.dart';
 
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:sleep_tracker_ui/utils.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 void main() {
@@ -203,7 +204,23 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
 
-    // TODO: update all tags here and save in db
+    for (var tag in tagsToAdd) {
+      widget.api.addTag(tag.name, colorToInt(tag.color));
+    }
+
+    for (var tag in tagsToDelete) {
+      widget.api.deleteTag(tag.id);
+    }
+
+    for (var tag in tagsToUpdate) {
+      widget.api.updateTag(tag.id, tag.name, colorToInt(tag.color));
+    }
+
+    widget.api.allTagsQuery().then((value) {
+        allTags = value;
+        widget.api.sleepsInMonthQuery(focusedDay)
+          .then((value) => _setSleeps(value));
+      });
   }
 
   void _deleteSleep() {
@@ -341,7 +358,7 @@ class _MyHomePageState extends State<MyHomePage> {
   showManageTagsDialog(BuildContext context) {
     showDialog(context: context, 
       builder: (context) {
-        List<Tag> updatedTags = allTags;
+        List<Tag> updatedTags = allTags.map((e) => e.copy()).toList();
         Color addedColor = Colors.white;
         String addedName = "";
         int newId = allTags.map((e) => e.id).reduce(max) + 1;
@@ -383,10 +400,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                   maxLines: null,
                                   showCursor: true,
                                   onChanged: (value) {
-                                    setState(() {
-                                      int idx = updatedTags.indexWhere((element) => element.id == t.id);
-                                      updatedTags[idx].name = value;
-                                    },);
+                                    int idx = updatedTags.indexWhere((element) => element.id == t.id);
+                                    updatedTags[idx].name = value;
                                   },),),
                               IconButton(icon: Icon(Icons.color_lens, color: t.color,),
                                onPressed: () {
