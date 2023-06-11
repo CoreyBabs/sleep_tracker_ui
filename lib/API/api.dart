@@ -7,8 +7,6 @@ import 'package:sleep_tracker_ui/API/queries.dart';
 import 'package:sleep_tracker_ui/Classes/tag.dart';
 import 'package:sleep_tracker_ui/Classes/sleep.dart';
 
-// TODO: add tag, delete tag, update tag 
-
 class GraphQlApi {
   late GraphQLClient client;
 
